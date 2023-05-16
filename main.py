@@ -28,7 +28,7 @@ COLOR_BLUE = (202, 228, 241)
  
 main_display = pygame.display.set_mode((WIDTH,HEIGHT))
 
-bg =pygame.transform.scale(pygame.image.load('background.png'), (WIDTH, HEIGHT))
+bg = pygame.transform.scale(pygame.image.load('background.png'), (WIDTH, HEIGHT))
 bg_X1 = 0
 bg_X2 = bg.get_width()
 bg_move = 3
@@ -57,7 +57,6 @@ class Button():
         action = False
 
         pos = pygame.mouse.get_pos()
-
         if self.rect.collidepoint(pos) and pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
             self.clicked = True
             action = True
@@ -116,47 +115,26 @@ needable_score = win_score
 image_index = 0
 
 
-playing = False
+playing = True
 gameOver = False
 YouWin = False
 start_popup_showing = True
+main_game_play = False
 
-while start_popup_showing:
-    FPS.tick(120)
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            start_popup_showing = False  
-
+def popup():
+    global playing, start_popup_showing, main_game_play, enemies, bonuses
+    enemies = []
+    bonuses = []
     main_display.fill(COLOR_BLUE)
-
     if start_button.draw():
-        playing = True
+        main_game_play = True
         start_popup_showing = False
     if exit_button.draw():
         playing = False
-        start_popup_showing = False
+        #start_popup_showing = False
 
-
-    pygame.display.flip()
-
-
-while playing:
-    FPS.tick(120)
-
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            playing = False
-        if event.type == CREATE_ENEMY:
-           enemies.append(create_enemy()) 
-
-        if event.type == CREATE_BONUS:
-           bonuses.append(create_bonus())        
-
-        if event.type == CHANGE_IMAGE:
-            player = pygame.image.load(os.path.join (IMAGE_PATH, PLAYER_IMAGES[image_index]))
-            image_index += 1
-            if image_index >= len(PLAYER_IMAGES):
-                image_index = 0
+def game_main():
+    global bg_X1, bg_X2, player_rect, playing, start_popup_showing, gameOver, YouWin, score, win_score, main_game_play
     bg_X1 -= bg_move
     bg_X2 -= bg_move
 
@@ -168,7 +146,6 @@ while playing:
     
     main_display.blit(bg, (bg_X1, 0))
     main_display.blit(bg, (bg_X2, 0))
-                     
 
     keys = pygame.key.get_pressed()   
 
@@ -182,23 +159,21 @@ while playing:
         player_rect = player_rect.move(player_move_up)
 
     if keys [K_LEFT] and player_rect.left > 0:
-        player_rect = player_rect.move(player_move_left)   
+        player_rect = player_rect.move(player_move_left) 
 
     for enemy in enemies:  
         enemy[1] = enemy[1].move(enemy[2])
         main_display.blit(enemy[0], enemy[1]) 
 
         if player_rect.colliderect(enemy[1]):
-            playing = False
+            main_game_play = False
             start_popup_showing = True
-            gameOver = True
+            #gameOver = True
             
             
         if win_score == 0:
             playing = False
             YouWin = True
-            
-            
 
     for bonus in bonuses:  
         bonus[1] = bonus[1].move(bonus[2])
@@ -212,9 +187,6 @@ while playing:
     main_display.blit(SCORE_FONT.render(TXT_NEEDABLE_SCORE + str(needable_score), True, COLOR_BLACK), (WIDTH-250, 20))
     main_display.blit(SCORE_FONT.render(TXT_FINISH_SCORE + str(win_score), True, COLOR_BLACK), (50, 20))
     main_display.blit(player, player_rect)
-    
-    
-    pygame.display.flip()
 
     for enemy in enemies:
         if enemy[1].right < 0:
@@ -223,6 +195,30 @@ while playing:
     for bonus in bonuses:
         if bonus[1].top > HEIGHT:
             bonuses.pop(bonuses.index(bonus)) 
+
+while playing:
+    FPS.tick(120)
+    
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            playing = False
+        if event.type == CREATE_ENEMY and main_game_play:
+           enemies.append(create_enemy()) 
+        if event.type == CREATE_BONUS and main_game_play:
+           bonuses.append(create_bonus()) 
+        if event.type == CHANGE_IMAGE and main_game_play:
+            player = pygame.image.load(os.path.join (IMAGE_PATH, PLAYER_IMAGES[image_index]))
+            image_index += 1
+            if image_index >= len(PLAYER_IMAGES):
+                image_index = 0
+
+    if start_popup_showing:
+        popup()
+    if main_game_play:
+        game_main()
+    pygame.display.flip()
+
+    
 
 lose_width = GAME_OVER_FONT.render(str(TXT_GAME_OVER), True, COLOR_BLACK).get_width()       
 win_width = GAME_OVER_FONT.render(str(TXT_YOU_WIN), True, COLOR_BLACK).get_width()
